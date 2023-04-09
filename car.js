@@ -1,6 +1,6 @@
 //box2d can be used
 class Car{
-    constructor(x,y,width,height,controlType,maxSpeed=3){
+    constructor(x,y,width,height,controlType,maxSpeed=5){
         this.x=x;
         this.y=y;
         this.width=width;
@@ -13,8 +13,13 @@ class Car{
         this.angle=0;
         this.damaged=false;
 
+        this.useBrain=controlType=="AI";
+
         if(controlType!="DUMMY"){
             this.sensor=new Sensor(this);
+            this.brain=new NeuralNetwork(
+                [this.sensor.rayCount,6,4]
+            );
         }
         this.control=new Controls(controlType);
     }
@@ -27,8 +32,21 @@ class Car{
         }
         if(this.sensor){
             this.sensor.update(roadBorders,traffic);
+            const offsets=this.sensor.readings.map(
+                s=>s==null?0:1-s.offset
+            );
+            const outputs=NeuralNetwork.feedForward(offsets,this.brain);
+            //console.log(outputs);
+
+            if(this.useBrain){
+                this.control.forward=outputs[0];
+                this.control.left=outputs[1];
+                this.control.right=outputs[2];
+                this.control.backward=outputs[3];
+            }
         }
     }
+
     #assessDamage(roadBorders,traffic){
         for(let i=0;i<roadBorders.length;i++){
             if(polysIntersect(this.polygon,roadBorders[i])){
@@ -101,7 +119,7 @@ class Car{
         this.x-=Math.sin(this.angle)*this.speed;
         this.y-=Math.cos(this.angle)*this.speed;
     }
-    draw(ctx,color){
+    draw(ctx,color,drawSensor=false){
         if(this.damaged){
             ctx.fillStyle="gray";
         }else{
@@ -117,7 +135,7 @@ class Car{
         // var image = new Image();
         // image.src = "./ironman.png";
         // ctx.drawImage(image, -this.width/2, -this.height/2, this.width, this.height);
-        if(this.sensor){
+        if(this.sensor&& drawSensor){
             this.sensor.draw(ctx);
         }
     }
