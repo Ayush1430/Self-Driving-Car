@@ -22,6 +22,11 @@ class Car{
             );
         }
         this.control=new Controls(controlType);
+        // var image = new Image();
+        // image.src = "./ironman.png";
+        // ctx.drawImage(image, -this.width/2, -this.height/2, this.width, this.height);
+
+        
     }
 
     update(roadBorders,traffic){
